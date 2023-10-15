@@ -1,0 +1,13 @@
+Metadata-Version: 2.1
+Name: beadroll
+Version: 0.0.1
+Summary: a pythonic mini script for ics file creation
+Author: Laurence Allan Lawlor
+Author-email: laurencelawlor@gmail.com
+Requires-Dist: Click
+Requires-Dist: ics
+Requires-Dist: pretty_errors
+Requires-Dist: rich
+Requires-Dist: ipython
+
+a pythonic mini script for ics file creation made on the fly
