@@ -7,3 +7,4 @@ beadroll.egg-info/dependency_links.txt
 beadroll.egg-info/entry_points.txt
 beadroll.egg-info/requires.txt
 beadroll.egg-info/top_level.txt
+docs/man/beadroll.1

@@ -1,0 +1,152 @@
+
+=head1 NAME
+
+beadroll - create calendar files with multiple events
+
+=head1 SYNOPSIS
+
+B<beadroll> [OPTIONS] ARGUMENTS
+
+=head1 DESCRIPTION
+
+This section contains the detailed description of the command.
+beadroll functions on the basis of adding events to a pickle file. The pickle file
+then stores the events which you can modify using the `add` and `rm` subcommands.
+
+beadroll's main subcommand, `add` has several options as well and these will need some
+explanation. 
+
+=head1 example command
+
+=begin html
+<code>
+beadroll add --alarms="alarm=last minute, trigger=-1m, summary=get ready, alarm=five minutes, trigger=-5m, summary=steady time, alarm=feeder, trigger=-15m, summary=start preparations, alarm=soul, trigger=-30m, summary=preparations, alarm=month before, trigger=-744h, summary=One Month Till Release" \
+"Publish \"Lucky Number Six\" Music Video" \
+"2024-06-18T12:00:00-04:00" \
+"2024-06-18T13:00:00-04:00"
+
+</code>
+
+=end html 
+
+
+=head1 ADD
+
+B<beadroll add> [options] NAME BEGIN END
+
+beadroll's add command is the motor behind the interface.
+
+
+=head1 ARGUMENTS
+
+beadroll add command takes three args: NAME BEGIN END
+
+The `name` is the name of the event that should be entered as a raw string literal.
+the `begin`, and `end` keyword indicates the beginning, and ending time of the event. 
+This can be entered using B<ISO 8601> formatting.
+An example would be B<"2024-06-18T12:00:00-04:00">.
+
+The time date format "2024-06-18T12:00:00-04:00" follows the ISO 8601 standard for representing date and time information.
+
+=head1 Breaking it down, formatting for the BEGIN and END timestamp:
+
+- "2024-06-18" represents the date in the format of year-month-day.
+- "T" separates the date from the time.
+- "12:00:00" represents the time in the format of hour:minute:second.
+- "-04:00" represents the time zone offset, with "-04:00" indicating a 4-hour offset behind Coordinated Universal Time (UTC).
+
+So, in this example, the date is June 18, 2024, and the time is 12:00:00 local time, with a time zone offset of -04:00.
+
+It should be noted that beadroll does not correct errors in events that you create. This means that
+if you create an event that ends before it begins beadroll will generate the ICS file without complaint
+and only when you import that file into a calendar application will you get a error. 
+
+=head1 OPTIONS
+
+This section describes the available options for the `add` command.
+
+As of version 0.0.1 these features are in development and only one is 
+of attention.
+
+
+=over 4
+
+=item B<--alarms>
+
+the option takes a string literal from the command line in the form of:
+--alarms="<string-literal>"
+
+the string takes multiple alarms, each delimited by the keyword `alarm` and
+given a special heading. Note that heading cannot be reused. So that each
+heading needs a special name. `--alarms="alarm=tower bell, trigger=-1m, summary=chimes the hour, tower bell, trigger=-1m, summary=chimes the hour" should only produce one alarm.
+
+=item B<--option2>
+
+Description of option 2.
+
+=back
+
+=head1 RM
+B<beadroll rm> [OPTIONS] [POINTER]...
+
+the remove command is meant to make editing the pickle database feasible, 
+although in it's current formation not convenient. To understand the remove
+command we have to look at the keyword `pointer`, which is a representation of the 
+first argument given to the command.
+
+beadroll takes the first argument and removes the item from the database's list that 
+corresponds to the item. One interesting feature of the `pointer` argument is it's ability
+to be used as a slicer. I followed the model of python's slicing for this, and because it
+is fairly complicated I'll provide an explanation.
+
+beadroll's remove command works by removing items from the database. These items are
+in turned numerically indexed allowing the user to remove them by using there indexed numbers.
+
+now consider the word I<'surcharge'>. it's an eight letter word and by definition, if we begin indexing
+at zero, the last index should be seven. Slicing works by placing a colon before or after a number to
+include each ordinal coming up to, and including, the number, if the colon is placed before, or each ordinal leading away
+from the number. In this way ':3' would give us the word I<'sur'>, while '3:' would give us I<'charge'>.
+
+=over 4
+
+=item B<--dry>
+
+exits after displaying what the database should look like
+
+=back 
+
+=head1 EXAMPLES
+
+This section contains code examples demonstrating usage of the command.
+
+=begin html
+
+<code>
+beadroll add --alarms="alarm=last minute, trigger=-1m, summary=get ready, alarm=five minutes, trigger=-5m, summary=steady time, alarm=feeder, trigger=-15m, summary=start preparations, alarm=soul, trigger=-30m, summary=preparations, alarm=month before, trigger=-744h, summary=One Month Till Release" \
+"Publish \"Don't Say I Told You So\" Music Video" \        
+"2024-01-15T12:00:00-04:00" \
+"2024-01-15T13:00:00-04:00"
+
+beadroll add --alarms="alarm=last minute, trigger=-1m, summary=get ready, alarm=five minutes, trigger=-5m, summary=steady time, alarm=feeder, trigger=-15m, summary=start preparations, alarm=soul, trigger=-30m, summary=preparations, alarm=month before, trigger=-744h, summary=One Month Till Release" \
+"Publish \"There's No Sound In Outer Space\" Music Video" \
+"2024-02-15T12:00:00-04:00" \
+"2024-02-15T13:00:00-04:00"
+</code>
+
+=end html
+
+=head1 SEE ALSO
+
+List any related man pages or external resources here.
+
+=head1 AUTHOR
+
+Laurence Allan Lawlor
+laurencelawlor@gmail.com
+
+
+=head1 COPYRIGHT AND LICENSE
+
+Specify the copyright notice and license information for the command.
+
+=cut

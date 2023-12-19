@@ -24,23 +24,80 @@ class EventManager:
                 'events': self.events,
                 'alarms': self.alarms
                 }
-    def save_to_pickle(self, event_dict):
+    def save_to_pickle(self, event_dict, destructive=False):
         """
         saves entire completed dictionary events to the dictiioanry storage medium 'manager'.
+        saving is destructive if add parameter is false: old data is replaced by new data.
         all dicitionaries should be complete before adding them to this list of event dictionaries.
         """
         try:
-            self.manager['events'].append(event_dict)
-            print("Appending done, here is new dictionary:", self.manager)
+            # not destructive {{{ #
+            if isinstance(self.manager['events'], (str, dict)) and isinstance(event_dict, (str, dict)) and not destructive:
+                print('[green]found events key value as [purple]\"str, or dict\"[/purple][/green]' + "\n" +
+                      '[green]imported evenets to be save are [purple]\"as string, or diccitonary\"' + "\n" +
+                      '[green]fucntion is not [purple]destructive[/purple] [/green]')
+            
+                self.manager['events'] = [self.manager.get('events')]
+                self.manager['events'].append(event_dict)
+                print("Appending done, here is new dictionary:", self.manager)
+            
+            elif isinstance(self.manager['events'], (str, dict)) and isinstance(event_dict, list) and not destructive:
+            
+                print('[green]found events key [purple]value as \"string, or dictionary\" [/purple][/green]' + "\n" +
+                      '[green]imported evenets to be save are [purple]\"as list\"' + "\n" +
+                      '[green]fucntion is not [purple]destructive[/purple] [/green]')
+            
+                self.manager['events'] = [self.manager.get('events')]
+                self.manager['events'] += event_dict
+                print("Appending done, here is new dictionary:", self.manager)
+            elif isinstance(self.manager['events'], list) and isinstance(event_dict, (str, dict)) and not destructive:
+            
+                print('[green]found events key  value [purple]\"as list\" [/purple][/green]' + "\n" +
+                      '[green]imported evenets to be save are [purple]\"as string, or dictionary\"' + "\n" +
+                      '[green]fucntion is not [purple]destructive[/purple] [/green]')
+                self.manager['events'].append(event_dict)
+                print("Appending done, here is new dictionary:", self.manager)
+            elif isinstance(self.manager['events'], list) and isinstance(event_dict, list) and not destructive:
+                print('[green]found events key value [purple]\"as list\"[/purple][/green]' + "\n" +
+                      '[green]imported evenets to be save are [purple]\"as list\"' + "\n" +
+                      '[green]fucntion is [purple]not destructive[/purple] [/green]')
+                self.manager['events'] += event_dict
+                print("Appending done, here is new dictionary:", self.manager)
+            # }}} not destructive #
+
+
+            elif isinstance(event_dict, (str, dict)) and destructive:
+
+                print(
+                '[yellow]imported events to be saved are [red]\"as str, or dictionary\"[/red] rather than list[/yellow]' + "\n" +
+                '[yellow]save function is set to [red]\"destructive\"[/red] rather than not[/yellow]' + "\n" +
+                      "" )
+
+                self.manager['events'] = [event_dict]
+                print("Appending done, here is new dictionary:", self.manager)
+
+            elif isinstance(event_dict, list) and destructive:
+                print(
+                '[yellow]imported events to be saved are [red]\"list\"[/red] rather than list[/yellow]' + "\n" +
+                '[yellow]save function is set to [red]\"destructive\"[/red] rather than not[/yellow]' + "\n" +
+                     "")
+
+                self.manager['events'] = event_dict
+                print("Appending done, here is new dictionary:", self.manager)
+            else:
+                self.manager['events'].append(event_dict)
+                print("Appending done, here is new dictionary:", self.manager)
         except Exception as e:
             print("Something went wrong appending event dictionary to self.manager['events']", str(e)) 
+            if str(e) == "'dict' object has no attribute 'append'":
+                print("yea")
 
         with open(self.picklefile, 'wb') as f:
             pickle.dump(self.manager, f)
 
     def load_from_pickle(self, debug=True):
         """
-        loads from pickle
+        loads from pickle, filling the self.manager
         """
         try:
             with open(self.picklefile, 'rb') as f:
@@ -257,11 +314,11 @@ def add(picklefile, name, begin, end, duration, uid, description, created, last_
             print(f"adding {value} to event, {event_dict['name']}.")
             event_dict['alarms'].append(value)
 
-    manager.save_to_pickle(event_dict)
+    manager.save_to_pickle(event_dict, destructive=False)
 
 @cli.command()
 @click.option('--picklefile', type=str, default=repoconfig)
-def list(picklefile):
+def show(picklefile):
     """
     list the contents of pickle file
     """
@@ -279,14 +336,14 @@ def list(picklefile):
 @click.option('--verbose', is_flag=True)
 @click.option('--dry', is_flag=True)
 @click.argument('pointer', nargs=-1)
-def rm(pointer, debug, verbose, dry, picklefile):
+def crop(pointer, debug, verbose, dry, picklefile):
     """
-    remove events from pickle
+    crop events from pickle
     """
     manager = EventManager(picklefile)
     container = manager.load_from_pickle(debug=False)
     if verbose:
-        print(container['events'][0])
+        print(container['events'])
     if debug:
         print("[blue]pointer is [/blue]", type(pointer))
         print(len(pointer))
@@ -308,12 +365,13 @@ def rm(pointer, debug, verbose, dry, picklefile):
         sys.exit()
     else:
         container['events'] = receiver
-        manager.save_to_pickle(container)
+        print("is [red]container[/red] a list: ", isinstance(container['events'], type(list)))
+        manager.save_to_pickle(container, destructive=True)
 
 @cli.command()
-@click.argument('picklefile', type=str)
+@click.option('--picklefile', type=str, default=repoconfig)
 @click.argument('calendarfile', type=str)
-def create_ics(picklefile, calendarfile):
+def create(picklefile, calendarfile):
     """
     save events to ics file
     """
