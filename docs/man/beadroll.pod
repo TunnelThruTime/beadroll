@@ -19,6 +19,7 @@ explanation.
 =head1 example command
 
 =begin html
+
 <code>
 beadroll add --alarms="alarm=last minute, trigger=-1m, summary=get ready, alarm=five minutes, trigger=-5m, summary=steady time, alarm=feeder, trigger=-15m, summary=start preparations, alarm=soul, trigger=-30m, summary=preparations, alarm=month before, trigger=-744h, summary=One Month Till Release" \
 "Publish \"Lucky Number Six\" Music Video" \
@@ -86,6 +87,31 @@ Description of option 2.
 
 =back
 
+=head1 CROP
+B<beadroll crop> [OPTIONS] [POINTER]...
+
+The crop tool does what you might expect from a crop tool, it trims the edges.
+crop does this by trimming out everything that isn't selected. Therefore if
+we had the characters composing the word I<argument> and we wanted to keep 
+the characters 2, 3, and 4, we could use '2:4' as the pointer argument.
+This would select the word I<gum> and crop what wasn't selected.
+
+Currently the crop tool, or command, is the only functional tool in removing items
+from the database, as of such, please refer to the I<rm> section for instructions on
+the I<pointer> argument that is the supply to the modification commands, i.e., I<rm>, 
+and I<crop>.
+
+=over 4
+
+=item B<--dry>
+
+use the dry option to have the program stop before altering the database and print out
+the alterations that would take place. In the execution of the crop tool, the dry option
+prints out the items within that database that would be keep after the croping.
+
+=back
+
+
 =head1 RM
 B<beadroll rm> [OPTIONS] [POINTER]...
 
@@ -135,15 +161,119 @@ beadroll add --alarms="alarm=last minute, trigger=-1m, summary=get ready, alarm=
 
 =end html
 
+=head1 DEVELOPER NOTES
+
+Currently this entire project was written in python, but the backend of the project's persistence is dependent on pickle.
+For that reason this section will detail the pickle problem, which itself is a method of I<object serialization>. Inspection of 
+the I<container> that is frequently used throughout the source indicate the method used in storing data is first the dictionary.
+
+In the container's dictionary there are two keys, I<events>, and I<alarms>. The manipulation of these two dictionary values is 
+crucial to the manipulation of beadroll's source coding.
+
+=head1 EventManager class
+
+The event manager class plays a key role in the functionality of the beadroll command line interface.
+Below I've listed the various functions that I've put into the EventManager to make it function the way
+that it does. I hope that they are helpful, and at the very least I know that this documentation will be
+helpful to me in the future.
+
+
+=over 4
+
+=item save_to_pickle
+
+Immediately viewing the source code that follows the initialization of the I<EventManager> class it is obvious the
+code surrounding the I<save_to_pickle> is meant to correct errors within the pickle's hierchary.
+As mentioned above the hierchary of the pickle data is of utmost importance. Both I<events> and I<alarms> must be 
+lists if the structure of the hierchary is to remain foundational. These two lists must be in a dictionary, and the
+dictionary must be saved in the pickle database file. 
+
+beadroll is git version maintained, and so as of version 0.0.1, the first version, there are 7 if, and else if statements
+within the I<save_to_pickle> function. These if statments monitor three factors to channel the flow of the coding.
+There are (1.), which datatype (list, or str) the container['events'] is, (2.), which datatype the input data is, and (3.),
+whether or not the I<EventManager.save_to_pickle> will be set to I<destructive>. 
+
+For the first four instances of if statements within the I<save_to_pickle> function deal with soft saving, or perserving
+the data while appending new items to it. The statements in this segments check all three variables before doing anything.
+When writing the code for the destructive cases in the I<save_to_pickle> all that seemed to go out the door.
+For the if statements associated with overwriting the data in the container events there is only two factors which determine
+the workflow. These are the input datatype, and the destructive boolean.
+
+The coding for the destructive segments, that is the last two is fundamentally different. The operate on the principle that
+if the incoming data is of the datatype list then the data is saved, overwriting the contents of the key value pair 'events'.
+However is the datatype of the including data is not a list, the coding is written to place it within a list before saving,
+and overwritting the data within the key value pair 'events'.
+
+But before I get into that I will have to detail some other quirks about the I<save_to_pickle> function.
+
+=back
+
+=head1 REMOVING ITEMS FROM THE CONTAINER EVENTS
+
+removing events from the container events is one of the key functionalities of the program, however there are some significant
+quirks that need to be addressed in terms of the utilitization of this feature.
+
+Currently, as of version 0.0.1, when items are removed from the list the list is disolve itself once there is only one
+item within the list. This was the initial reason that prompted me to develop the I<save_to_pickle> if statements detailed
+in the previous segment. In fact it is so pervasive in looking over the coding that you could say the ENTIRE reason that
+the if statements were written was to manage workflow events that rebuild the list once the list dissolves.
+
+However it is clear this is cause significant problems for the structure of the device. Every function that deals with the
+database will have to encounter this problem and come up with solutions for it. Furthermore it doesn't seem that other
+lists within the python environment behaviour anything like this. 
+
+=head1 structuralisation of subcommands
+
+The I<add>, I<rm>, and I<crop> subcommands all access the database through the use of the I<save_to_pickle> to ensure their
+ability to manipulate that database. This is part of the reason why, in version 0.0.1, there are 7 if statements. The last
+two if statements are never, as far as I can tell, actually utilized by the I<add> command, but are exclusive to the I<crop> and 
+I<rm> commands.
+
+=head1 STRUCTURE OF THE DATASET: VOODOO CONCERNING THE FRACTUALS 
+
+there is an aspect of beadroll that is ultra reality. By this I'm sure you're thinking outside of your head, but really it is
+much more common place. As I've noted above there are several 'if statements' that connect the base functionality of the utility.
+This base is severely compromised when it comes to removing items from the container events. 
+
+The reason for this seems to lie in the way the code saves a version of itself before placing it again in the container events.
+This has the surreal effect of seemingly making fractual copies of itself each down one layer of the container events.
+
+The source is capable of rebounding from a str to a list when the list dissolves but when I went to attach the removal of items
+from the list onto the base of the several if statements I fumbled in the untangling of options that were available.
+
+One of the curious things about the use of the I<save_to_pickle> 'if statements' is the two concerning the I<destructive> parameter.
+Neither one concerns itself with the nature of the container events. The idea behind this was that since they would be overwriting 
+the container events they shouldn't concern themselves with it, but in practice when you run them they fratualize the contents of the
+container in a recursive manner. Again this is only in version 0.0.1, and if I don't update the man pages here the reader should consult
+the version as read from I<git log>. 
+
+After reviewing the subcommands I<rm>, and I<crop>, I realized that the reason that the overwritten dataset was producing fractuals 
+had to do with the way in which the container events was being saved. In the lines the container events was being saved after being
+altered by the subcommands, usually with a loop, and then saved back to a separate variable that represented the uppermost level of the
+hierchary. If you recall, the hierchary of the dataset is initially a dictionary and then two key pairs each containing a list datatypes.
+For this reason the lists themselves are a sort of secondary level in the datastructure, where the uppermost level is the dictionary.
+
+What was occuring was that a line which instructed the python to overwrite the secondary structure was overwriting it with the uppermost
+level of the hierchary, thereby recursively nesting the structure within itself.
+
+Since programming occurs most frequently within a sort of black box it is difficult to spot these types of anomlies and they cause a lot
+of confusion, but it should be noted that the layout of the structure is fundamental to a functional command line utility.
+You can of course always check the nature of your structure with the subcommand I<show> and get consistent results.
+
+=head1 TUVING THE MACHINE: RM , CROP Commands
+
+rm and crop commands work in different manners. The crop command will save what you have selected using the pythonic slicing
+described above. The rm command by contrast will discard what you have selected by splicing.
+
+
 =head1 SEE ALSO
 
 List any related man pages or external resources here.
 
 =head1 AUTHOR
 
-Laurence Allan Lawlor
-laurencelawlor@gmail.com
-
+Luew Lemminkainen 
+<github.com/tunnelthrutime>
 
 =head1 COPYRIGHT AND LICENSE
 
